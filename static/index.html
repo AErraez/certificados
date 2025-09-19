@@ -26,7 +26,7 @@
     } else {
       cedulaDisplay.textContent = 'Cédula: ' + cedula;
 
-      fetch('http://localhost:5000/api/proxy', {
+      fetch('/api/proxy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
