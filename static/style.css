@@ -1,0 +1,78 @@
+body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 30px;
+      color: #333;
+    }
+
+h2, h3 {
+    text-align: center;
+    color: #444;
+    margin-bottom: 10px;
+}
+
+.cedula-label {
+    text-align: center;
+    font-size: 16px;
+    margin-bottom: 30px;
+}
+
+#resultado {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #ddd;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+}
+
+th, td {
+    padding: 12px 16px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+}
+
+th {
+    background-color: #4a90e2;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 14px;
+}
+
+tr:nth-child(even) {
+    background-color: #f7f9fc;
+}
+
+tr:hover {
+    background-color: #eaf2fb;
+}
+
+@media (max-width: 768px) {
+    th, td {
+    font-size: 12px;
+    padding: 10px;
+    }
+
+    h2 {
+    font-size: 20px;
+    }
+
+    .cedula-label {
+    font-size: 14px;
+    }
+}
+
+.error {
+    color: red;
+    font-weight: bold;
+    text-align: center;
+}

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Resultado de Certificación</title>
+  <link href="./style.css" rel="stylesheet">
+</head>
+<body>
+  <h2>Resultado de Búsqueda</h2>
+  <div class="cedula-label" id="cedulaDisplay">Cédula: </div>
+  <h3>Certificaciones por OEC</h3>
+
+  <div id="resultado">Cargando...</div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const cedula = urlParams.get('cedula');
+
+    const resultadoDiv = document.getElementById('resultado');
+    const cedulaDisplay = document.getElementById('cedulaDisplay');
+
+    if (!cedula) {
+      cedulaDisplay.style.display = "none";
+      resultadoDiv.innerHTML = '<div class="error">Error: No se proporcionó una cédula en la URL.</div>';
+    } else {
+      cedulaDisplay.textContent = 'Cédula: ' + cedula;
+
+      fetch('http://localhost:5000/api/proxy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ cedula: cedula })
+      })
+      .then(response => {
+        if (!response.ok) throw new Error("No se encontró información");
+        return response.text();
+      })
+      .then(tableHTML => {
+        resultadoDiv.innerHTML = tableHTML;
+      })
+      .catch(error => {
+        resultadoDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+        console.error('Error:', error);
+      });
+    }
+  </script>
+</body>
+</html>
