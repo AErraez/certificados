@@ -1,21 +1,60 @@
-from flask import Flask, request, jsonify
+from flask import (
+    Flask, request, jsonify, send_from_directory,
+    render_template, redirect, url_for, session, Response
+)
 from flask_cors import CORS
 import requests
 from bs4 import BeautifulSoup
 
-from flask import send_from_directory
-
-
 app = Flask(__name__)
 CORS(app)
 
+app.secret_key = 'your-secret-key'  # Needed for session handling
+
+# === Static index.html (existing route) ===
 @app.route('/')
 def serve_home():
     return send_from_directory('static', 'index.html')
 
-BASE_URL = "https://portal.trabajo.gob.ec"
+# === Mock Login System ===
+mock_users = {'admin': 'admin123'}
+mock_ids = ['0912345678', '0999999999', '0911111111']
 
-# === Helpers ===
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        if username in mock_users and mock_users[username] == password:
+            session['username'] = username
+            return redirect(url_for('dashboard'))
+        return render_template('login.html', error='Credenciales inválidas')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+@app.route('/dashboard')
+def dashboard():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    return render_template('dashboard.html', ids=mock_ids)
+
+@app.route('/form/<id>', methods=['GET', 'POST'])
+def form(id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    if request.method == 'POST':
+        form_data = request.form  # You can log or print this
+        print(f"Formulario recibido para ID {id}:", form_data)
+        return redirect(url_for('dashboard'))
+    return render_template('form.html', id=id)
+
+# === Proxy API for existing JS frontend ===
+
+BASE_URL = "https://portal.trabajo.gob.ec"
 
 def get_view_state(html):
     soup = BeautifulSoup(html, "html.parser")
@@ -29,20 +68,17 @@ def extract_table(html):
         return None
 
     table = table_wrapper.find('table')
-    
-    # === Remove "Ver Certificado" column ===
 
-    # Step 1: Identify the index of the "Ver Certificado" column from the <thead>
+    # Remove "Ver Certificado" column
     thead = table.find('thead')
     ver_cert_index = -1
     headers = thead.find_all('th')
     for i, th in enumerate(headers):
         if th.get_text(strip=True) == "Ver Certificado":
             ver_cert_index = i
-            th.decompose()  # Remove the <th> itself
+            th.decompose()
             break
 
-    # Step 2: Remove the corresponding <td> in each row
     if ver_cert_index != -1:
         tbody = table.find('tbody')
         for row in tbody.find_all('tr'):
@@ -50,24 +86,13 @@ def extract_table(html):
             if len(cells) > ver_cert_index:
                 cells[ver_cert_index].decompose()
 
-    # === Clean up "Nombres" and "Perfil" columns ===
     for th in headers:
         title = th.find("span", class_="ui-column-title")
         if title and title.get_text(strip=True) in ["Nombres", "Perfil"]:
-            # Remove label and input elements
-            label = th.find("label")
-            input_tag = th.find("input")
-            if label:
-                label.decompose()
-            if input_tag:
-                input_tag.decompose()
+            if (label := th.find("label")): label.decompose()
+            if (input_tag := th.find("input")): input_tag.decompose()
 
     return str(table_wrapper)
-
-
-# === Main Route ===
-
-from flask import Response
 
 @app.route('/api/proxy', methods=['POST'])
 def proxy_request():
@@ -75,7 +100,6 @@ def proxy_request():
     if not cedula:
         return jsonify({"error": "Cédula no proporcionada"}), 400
 
-    # --- SESSION 1: Legitimidad Certificación ---
     session1 = requests.Session()
     path1 = "/setec-portal-web/pages/legitimidadCertificacion.jsf"
     url1 = BASE_URL + path1
