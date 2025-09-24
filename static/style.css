@@ -1,3 +1,27 @@
+.alert-form {
+    /* Add a transition for smooth animation */
+    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+    opacity: 0; /* Start with the alert invisible */
+    transform: scale(0.9); /* Start with the alert slightly smaller */
+}
+
+.alert.show {
+    /* When the 'show' class is added, apply these styles */
+    opacity: 1; /* Fade in */
+    transform: scale(1); /* Scale up to original size */
+    animation: alert-appear 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+}
+
+@keyframes alert-appear {
+    0% {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
 body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #f9f9f9;

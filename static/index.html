@@ -4,33 +4,136 @@
   <meta charset="UTF-8">
   <title>Resultado de Certificación</title>
   <link href="/static/style.css" rel="stylesheet">
-
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-  <h2>Resultado de Búsqueda</h2>
-  <div class="cedula-label" id="cedulaDisplay">Cédula: </div>
-  <h3>Certificaciones por OEC</h3>
+<body class="bg-light">
 
-  <div id="resultado">Cargando...</div>
+  <div class="container py-3">
+    <h2 class="mb-4 text-center">Resultado de Búsqueda</h2>
+
+
+
+    <div id="cedulaDisplay" class="text-center fs-5 mb-4">Cédula: </div>
+
+    <h3 class="mb-3">Certificaciones por OEC</h3>
+    <div id="resultado" class="mb-5">Cargando...</div>
+    <!-- Bootstrap alerts container -->
+    <div id="alert-container" class="mb-3"></div>
+    <div id="admin-form" style="display:none;">
+      <div class="card shadow p-4 mb-5">
+        <h3 class="mb-4 text-center">Formulario Médico</h3>
+        <form id="cedula-form">
+          <!-- Hidden input to store cedula -->
+          <input type="hidden" name="cedula" id="cedula-hidden">
+
+          <div class="mb-3">
+            <label class="form-label">Nombre:</label>
+            <input type="text" name="nombre" class="form-control" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label d-block">Aptitud Médica:</label>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="aptitud" id="inlineRadio1" value="apto" required>
+              <label class="form-check-label" for="inlineRadio1">Apto</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="aptitud" id="inlineRadio2" value="observacion">
+              <label class="form-check-label" for="inlineRadio2">Apto en observación</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="aptitud" id="inlineRadio3" value="limit">
+              <label class="form-check-label" for="inlineRadio3">Apto con limitaciones</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="aptitud" id="inlineRadio4" value="noapto">
+              <label class="form-check-label" for="inlineRadio4">No apto</label>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Observaciones:</label>
+            <textarea name="comentario" class="form-control" rows="4" required></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-success w-100">Enviar</button>
+        </form>
+      </div>
+          <div class="text-center">
+      <a href="/logout" class="btn btn-outline-secondary btn-sm">
+        Cerrar sesión
+      </a>
+    </div>
+    </div>
+  </div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const cedula = urlParams.get('cedula');
+    const cedula = urlParams.get("cedula");
 
+    fetch(`/session-info?cedula=${cedula || ""}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.logged_in && data.cedula) {
+          document.getElementById("admin-form").style.display = "block";
+          document.getElementById("cedula-hidden").value = data.cedula;
+        }
+      });
+
+    // Function to show Bootstrap alerts dynamically
+    function showAlert(message, type = "success") {
+      const alertContainer = document.getElementById("alert-container");
+      const alert = document.createElement("div");
+      alert.className = `alert alert-form alert-${type} alert-dismissible fade show`;
+      alert.role = "alert";
+      alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      `;
+      alertContainer.appendChild(alert);
+
+      // Auto-dismiss after 3 seconds
+      setTimeout(() => {
+        alert.classList.remove("show");
+        alert.classList.add("fade");
+        setTimeout(() => alert.remove(), 150);
+      }, 3000);
+    }
+
+    document.getElementById("cedula-form").addEventListener("submit", e => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      fetch(`/submit-form/${formData.get("cedula")}`, {
+        method: "POST",
+        body: formData
+      })
+      .then(r => r.json())
+      .then(resp => {
+        if (resp.success) {
+          showAlert("Formulario enviado con éxito", "success");
+          // No reset here → keep data in the form
+        } else {
+          showAlert("Hubo un error al enviar el formulario", "danger");
+        }
+      })
+      .catch(err => {
+        showAlert("Error en la conexión: " + err, "danger");
+      });
+    });
+
+    // Show table results
     const resultadoDiv = document.getElementById('resultado');
     const cedulaDisplay = document.getElementById('cedulaDisplay');
 
     if (!cedula) {
       cedulaDisplay.style.display = "none";
-      resultadoDiv.innerHTML = '<div class="error">Error: No se proporcionó una cédula en la URL.</div>';
+      resultadoDiv.innerHTML = '<div class="alert alert-danger">Error: No se proporcionó una cédula en la URL.</div>';
     } else {
       cedulaDisplay.textContent = 'Cédula: ' + cedula;
 
       fetch('/api/proxy', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cedula: cedula })
       })
       .then(response => {
@@ -41,10 +144,12 @@
         resultadoDiv.innerHTML = tableHTML;
       })
       .catch(error => {
-        resultadoDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+        resultadoDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
         console.error('Error:', error);
       });
     }
   </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

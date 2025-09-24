@@ -27,9 +27,34 @@ def login():
         password = request.form['password']
         if username in mock_users and mock_users[username] == password:
             session['username'] = username
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('search'))
         return render_template('login.html', error='Credenciales inválidas')
     return render_template('login.html')
+
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    if request.method == 'POST':
+        cedula = request.form['cedula']
+        return redirect(url_for('serve_home', cedula=cedula))
+    return render_template('search.html')
+
+@app.route('/session-info')
+def session_info():
+    return jsonify({
+        "logged_in": 'username' in session,
+        "cedula": request.args.get("cedula")
+    })
+
+@app.route('/submit-form/<cedula>', methods=['POST'])
+def submit_form(cedula):
+    if 'username' not in session:
+        return jsonify({"error": "No autorizado"}), 401
+    form_data = request.form.to_dict()
+    print(f"Formulario recibido para {cedula}: {form_data}")
+    return jsonify({"success": True})
+
 
 @app.route('/logout')
 def logout():
