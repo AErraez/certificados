@@ -12,7 +12,7 @@ CORS(app)
 app.secret_key = 'your-secret-key'  # Needed for session handling
 
 # === Static index.html (existing route) ===
-@app.route('/')
+@app.route('/client')
 def serve_home():
     return send_from_directory('static', 'index.html')
 
@@ -31,10 +31,10 @@ def login():
         return render_template('login.html', error='Credenciales inválidas')
     return render_template('login.html')
 
-@app.route('/search', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def search():
-    if 'username' not in session:
-        return redirect(url_for('login'))
+    #if 'username' not in session:
+    #    return redirect(url_for('login'))
     if request.method == 'POST':
         cedula = request.form['cedula']
         return redirect(url_for('serve_home', cedula=cedula))
